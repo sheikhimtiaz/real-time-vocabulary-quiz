@@ -4,6 +4,8 @@ import com.sheikhimtiaz.realtimequiz.engine.QuizEngine;
 import org.springframework.stereotype.Service;
 import org.springframework.web.socket.WebSocketSession;
 
+import java.util.Objects;
+
 @Service
 public class QuizService {
 
@@ -17,14 +19,15 @@ public class QuizService {
 
     public void processMessage(WebSocketSession session, String payload) {
 
-        String[] parts = payload.split(" ");
-        if (parts.length < 3) {
+        String[] parts = payload.split(" ", 2);
+        if (parts.length < 2) {
             broadcastService.sendMessageToParticipant(session, "Invalid message format. Expected: <command> <data>");
         }
 
         String command = parts[0];
-        String quizId = parts[1];
-        String data = parts[2];
+        String data = parts[1];
+        String quizId = extractQuizId(session);
+
         switch (command) {
             case "JOIN":
                 handleJoinCommand(quizId, session, data);
@@ -35,6 +38,11 @@ public class QuizService {
             default:
                 handleUnknownCommand(session, payload);
         }
+    }
+
+    private String extractQuizId(WebSocketSession session) {
+        String path = Objects.requireNonNull(session.getUri()).getPath();
+        return path.substring(path.lastIndexOf('/') + 1);
     }
 
     public void handleDisconnect(WebSocketSession session) {

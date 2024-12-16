@@ -4,10 +4,7 @@ import com.sheikhimtiaz.realtimequiz.service.BroadcastService;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.socket.WebSocketSession;
 
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Quiz {
@@ -30,9 +27,13 @@ public class Quiz {
     }
 
     public void addParticipant(String userName, WebSocketSession session) {
+        String oldUsername = participants.get(session);
+        if(Objects.nonNull(oldUsername)) {
+            scores.remove(oldUsername);
+        }
         participants.put(session, userName);
         scores.putIfAbsent(userName, 0);
-        if (!active && participants.size() >= 1) {
+        if (!active && !participants.isEmpty()) {
             startQuiz();
         }
         broadcastService.sendMessageToParticipant(session, "You joined quiz: " + id);

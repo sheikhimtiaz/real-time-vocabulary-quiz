@@ -1,29 +1,21 @@
 package com.sheikhimtiaz.realtimequiz.config;
 
-import com.sheikhimtiaz.realtimequiz.service.QuizService;
 import org.springframework.stereotype.Component;
-import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
+import java.io.IOException;
+
 @Component
 public class WebSocketMessageHandler extends TextWebSocketHandler {
 
-    private final QuizService quizService;
-
-    public WebSocketMessageHandler(QuizService quizService) {
-        this.quizService = quizService;
+    public WebSocketMessageHandler() {
     }
 
     @Override
-    protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-        String payload = message.getPayload();
-        quizService.processMessage(session, payload);
-    }
-
-    @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-        quizService.handleDisconnect(session);
+    protected void handleTextMessage(WebSocketSession session, TextMessage message) throws IOException {
+        System.out.println(message.getPayload());
+        session.sendMessage(new TextMessage("Received: " + message.getPayload()));
     }
 }
