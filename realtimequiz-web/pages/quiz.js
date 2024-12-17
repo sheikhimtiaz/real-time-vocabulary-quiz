@@ -3,23 +3,23 @@ import { useRouter } from "next/router";
 import QuestionPanel from "../components/QuestionPanel";
 import Leaderboard from "../components/Leaderboard";
 
-const QUIZ_WS_URL = "ws://localhost:8080/quiz/quiz123";
+const QUIZ_WS_URL = "ws://localhost:8080/quiz/";
 
 export default function Quiz() {
   const router = useRouter();
-  const { username } = router.query;
+  const { quizId, username } = router.query;
 
   const [ws, setWs] = useState(null);
   const [question, setQuestion] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
   const [quizFinished, setQuizFinished] = useState(false);
+  const [countdownMessage, setCountdownMessage] = useState(null); 
 
   useEffect(() => {
-    const socket = new WebSocket(QUIZ_WS_URL);
+    const socket = new WebSocket(QUIZ_WS_URL + quizId);
 
     socket.onopen = () => {
-        console.log( "username -> " + username);
-        
+      console.log( "username -> " + username);
       socket.send(`JOIN ${username}`);
     };
 
@@ -27,14 +27,14 @@ export default function Quiz() {
       console.log(event.data);
       const data = event.data;
         
-      if (data.includes("Question")) {
-        const temp = data.split(":");
-        console.log(temp);
-        
+      if (data.includes("Countdown")) {
+        setCountdownMessage(data.split(":")[1]);
+      } else if (data.includes("Question")) {
         setQuestion(data);
-      } else if (data.includes("CurrentRanking")) {
-        setLeaderboard(data);
-      } else if (data.includes("FinalRanking")) {
+        setCountdownMessage(null);
+      } else if (data.includes("Current Ranking")) {
+        setLeaderboard(data.split("#")[1].split("\n").filter(item => item.length > 0));
+      } else if (data.includes("Final Ranking")) {
         setQuizFinished(true);
       }
     };
@@ -59,13 +59,19 @@ export default function Quiz() {
     <div style={{ textAlign: "center", marginTop: "20px" }}>
       <h1>Welcome to the Quiz</h1>
 
-      {quizFinished ? (
+      { quizFinished ? (
         <div>
           <h2>Quiz Finished!</h2>
           <Leaderboard data={leaderboard} />
         </div>
-      ) : question ? (
+      ) 
+      : question ? (
         <QuestionPanel question={question} onSubmit={submitAnswer} />
+      ) 
+      : countdownMessage ? (
+        <div>
+          <h2>{countdownMessage}</h2>
+        </div>
       ) : (
         <div>
           <h2>Waiting for the next question...</h2>
