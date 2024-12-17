@@ -1,13 +1,17 @@
 package com.sheikhimtiaz.realtimequiz.model;
 
 import com.sheikhimtiaz.realtimequiz.service.BroadcastService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.socket.WebSocketSession;
 
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Quiz {
+    private static final Logger log = LoggerFactory.getLogger(Quiz.class);
 
     private final String id;
     private final List<Question> questions;
@@ -18,6 +22,7 @@ public class Quiz {
 
     private int currentQuestionIndex = 0;
     private boolean active = false;
+    private boolean hasCountdownStarted = false;
 
     public Quiz(String id, ThreadPoolTaskScheduler scheduler, BroadcastService broadcastService) {
         this.id = id;
@@ -33,10 +38,10 @@ public class Quiz {
         }
         participants.put(session, userName);
         scores.putIfAbsent(userName, 0);
-        if (!active && !participants.isEmpty()) {
-            startQuiz();
-        }
         broadcastService.sendMessageToParticipant(session, "You joined quiz: " + id);
+        if (!active && !hasCountdownStarted && !participants.isEmpty()) {
+            startCountdown();
+        }
     }
 
     public void removeParticipant(WebSocketSession session) {
@@ -46,10 +51,29 @@ public class Quiz {
         }
     }
 
+    private void startCountdown() {
+        hasCountdownStarted = true;
+        for(int seconds=10;seconds>=0;seconds--){
+            broadcastService.broadcastToAllParticipants(participants.keySet(),
+                    MessageFormat.format("Countdown:Quiz is starting in {0} seconds!", seconds));
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                log.error("InterruptedException while sleeping: " + e.getMessage());
+                throw new RuntimeException(e);
+            }
+            if(participants.size() == 2) {
+                broadcastService.broadcastToAllParticipants(participants.keySet(), "Starting Quiz!");
+                break;
+            }
+        }
+        startQuiz();
+    }
+
     private void startQuiz() {
         active = true;
-        broadcastService.broadcastToAllParticipants(participants.keySet(), "Quiz is starting in 10 seconds!");
-        scheduler.schedule(this::broadcastNextQuestion, new Date(System.currentTimeMillis() + 10000));
+        log.info("Starting Quiz: " + this.id);
+        broadcastNextQuestion();
     }
 
     private void broadcastNextQuestion() {
@@ -73,20 +97,22 @@ public class Quiz {
 
     private void broadcastCurrentRanking() {
         String ranking = formatRanking();
-        broadcastService.broadcastToAllParticipants(participants.keySet(), "Current Ranking:\n" + ranking);
+        broadcastService.broadcastToAllParticipants(participants.keySet(), "Current Ranking #\n" + ranking);
     }
 
     private void broadcastFinalRanking() {
         String ranking = formatRanking();
-        broadcastService.broadcastToAllParticipants(participants.keySet(), "Quiz Finished! Final Ranking:\n" + ranking);
+        broadcastService.broadcastToAllParticipants(participants.keySet(), "Quiz Finished! Final Ranking #\n" + ranking);
     }
 
     private void endQuiz() {
+        active = false;
         broadcastService.broadcastToAllParticipants(participants.keySet(), "Quiz session ended. Goodbye!");
         participants.keySet().forEach(session -> {
             try {
                 session.close();
             } catch (Exception e) {
+                log.error("Exception while closing the session: " + e.getMessage());
                 e.printStackTrace();
             }
         });
