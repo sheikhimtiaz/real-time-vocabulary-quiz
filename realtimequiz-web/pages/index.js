@@ -8,7 +8,6 @@ export default function Home() {
 
   const handleJoin = (e) => {
     if (quizId.trim()) {
-        // router.push(`/quiz?quizId=quiz123`);
         router.push(`/quiz?quizId=${encodeURIComponent(quizId)}&username=${encodeURIComponent(username)}`);
     }
   };

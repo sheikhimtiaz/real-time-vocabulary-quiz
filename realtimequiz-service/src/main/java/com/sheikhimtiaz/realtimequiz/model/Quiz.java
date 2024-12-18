@@ -92,9 +92,13 @@ public class Quiz {
         }
 
         Question question = questions.get(currentQuestionIndex);
-        broadcastService.broadcastToAllParticipants(participants.keySet(), "Question: " + question.getText());
+        broadcastService.broadcastToAllParticipants(participants.keySet(), formatQuestionWithOptions(question));
 
         scheduler.schedule(this::closeCurrentQuestion, new Date(System.currentTimeMillis() + 10000));
+    }
+
+    private String formatQuestionWithOptions(Question question) {
+        return "Question: "+question.getQuestion()+"; " + String.join(":",question.getOptions());
     }
 
     private void closeCurrentQuestion() {
@@ -151,9 +155,16 @@ public class Quiz {
 
     private List<Question> initializeQuestions() {
         return List.of(
-                new Question("What is the capital of France?", "Paris"),
-                new Question("What is 2 + 2?", "4"),
-                new Question("What is the color of the sky?", "Blue")
+                new Question("What is the synonym of the word \"Happy\"?",
+                        new String[]{"Angry", "Sad", "Joyful", "Tired"}, "Joyful"),
+                new Question("What does the word \"Big\" mean?",
+                        new String[]{"Large", "Small", "Thin", "Fast"}, "Large"),
+                new Question("Fill in the blank: \"She is a very _______ girl who always smiles.\"?",
+                        new String[]{"Rude", "Kind", "Sad", "Lazy"}, "Kind"),
+                new Question("What is the meaning of the word \"Obfuscate\"?",
+                        new String[]{"Simplify", "Complicate or confuse", "Clarify", "Justify"}, "Complicate or confuse"),
+                new Question("What is the synonym of the word \"Eloquent\"?",
+                        new String[]{"Hesitant", "Articulate", "Quiet", "Fast"}, "Articulate")
         );
     }
 }

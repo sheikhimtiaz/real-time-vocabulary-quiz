@@ -11,6 +11,7 @@ export default function Quiz() {
 
   const [ws, setWs] = useState(null);
   const [question, setQuestion] = useState(null);
+  const [options, setOptions] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
   const [quizFinished, setQuizFinished] = useState(false);
   const [countdownMessage, setCountdownMessage] = useState(null); 
@@ -30,7 +31,10 @@ export default function Quiz() {
       if (data.includes("Countdown")) {
         setCountdownMessage(data.split(":")[1]);
       } else if (data.includes("Question")) {
-        setQuestion(data);
+        const ques = data.split(";").filter(item => item.length > 0);
+        const opts = ques[1].split(":").filter(item => item.length > 0);
+        setQuestion(ques[0]);
+        setOptions(opts);
         setCountdownMessage(null);
       } else if (data.includes("Current Ranking")) {
         const scoresStrArr = data.split("#")[1].split("\n").filter(item => item.length > 0);
@@ -71,7 +75,7 @@ export default function Quiz() {
                     </div>
                 ) 
                 : question ? (
-                    <QuestionPanel question={question} onSubmit={submitAnswer} />
+                    <QuestionPanel question={question} options={options} onSubmit={submitAnswer} />
                 ) 
                 : countdownMessage ? (
                     <div>
