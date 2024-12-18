@@ -1,14 +1,14 @@
 export default function Leaderboard({ data }) {
   return (
-    <div>
-      <h3>Leaderboard</h3>
-      <ul>
+    <div style={{paddingTop:"50px"}}>
+      <h3 style={{border:"1px solid black", textWrap:"wrap"}}>Leaderboard</h3>
+      <div>
         {data.map((entry, index) => (
-          <li key={index}>
+          <div key={index} style={{paddingBottom:"10px"}}>
             {entry} points
-          </li>
+          </div>
         ))}
-      </ul>
+      </div>
     </div>
   );
 }

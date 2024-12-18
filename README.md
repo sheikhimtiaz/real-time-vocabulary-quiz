@@ -41,7 +41,7 @@ Real-Time Vocabulary Quiz using Spring Boot WebSocket and Nextjs
 ### d) Database (Map/H2):
 - **Reason**: Excellent for flexible, schema-less data storage and rapid development.
 
-### e) Optional Monitoring Tools:
+### e) Monitoring Tools:
 - **Prometheus + Grafana**: Ideal for collecting and visualizing metrics.
 - **Elasticsearch + Kibana**: Effective for centralized logging and debugging.
 

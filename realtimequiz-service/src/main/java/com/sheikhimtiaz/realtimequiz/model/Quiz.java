@@ -60,7 +60,7 @@ public class Quiz {
 
     private void startCountdown() {
         hasCountdownStarted = true;
-        for(int seconds=10;seconds>=0;seconds--){
+        for(int seconds=30;seconds>=0;seconds--){
             broadcastService.broadcastToAllParticipants(participants.keySet(),
                     MessageFormat.format("Countdown:Quiz is starting in {0} seconds!", seconds));
             try {
