@@ -33,7 +33,10 @@ export default function Quiz() {
         setQuestion(data);
         setCountdownMessage(null);
       } else if (data.includes("Current Ranking")) {
-        setLeaderboard(data.split("#")[1].split("\n").filter(item => item.length > 0));
+        const scoresStrArr = data.split("#")[1].split("\n").filter(item => item.length > 0);
+        console.log(scoresStrArr);
+        
+        setLeaderboard(scoresStrArr);
       } else if (data.includes("Final Ranking")) {
         setQuizFinished(true);
       }
@@ -59,25 +62,33 @@ export default function Quiz() {
     <div style={{ textAlign: "center", marginTop: "20px" }}>
       <h1>Welcome to the Quiz</h1>
 
-      { quizFinished ? (
         <div>
-          <h2>Quiz Finished!</h2>
-          <Leaderboard data={leaderboard} />
+            <div>
+                { quizFinished ? (
+                    <div>
+                    <h2>Quiz Finished!</h2>
+                    {/* <Leaderboard data={leaderboard} /> */}
+                    </div>
+                ) 
+                : question ? (
+                    <QuestionPanel question={question} onSubmit={submitAnswer} />
+                ) 
+                : countdownMessage ? (
+                    <div>
+                    <h2>{countdownMessage}</h2>
+                    </div>
+                ) : (
+                    <div>
+                    <h2>Waiting for the next question...</h2>
+                    {/* <Leaderboard data={leaderboard} /> */}
+                    </div>
+                )}
+            </div>
+            <div>
+                <Leaderboard data={leaderboard} />
+            </div>
         </div>
-      ) 
-      : question ? (
-        <QuestionPanel question={question} onSubmit={submitAnswer} />
-      ) 
-      : countdownMessage ? (
-        <div>
-          <h2>{countdownMessage}</h2>
-        </div>
-      ) : (
-        <div>
-          <h2>Waiting for the next question...</h2>
-          <Leaderboard data={leaderboard} />
-        </div>
-      )}
+
     </div>
   );
 }

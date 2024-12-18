@@ -3,6 +3,7 @@ package com.sheikhimtiaz.realtimequiz.model;
 import com.sheikhimtiaz.realtimequiz.service.BroadcastService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.messaging.Message;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.socket.WebSocketSession;
 
@@ -23,6 +24,7 @@ public class Quiz {
     private int currentQuestionIndex = 0;
     private boolean active = false;
     private boolean hasCountdownStarted = false;
+    private boolean isQuizRunning = false;
 
     public Quiz(String id, ThreadPoolTaskScheduler scheduler, BroadcastService broadcastService) {
         this.id = id;
@@ -32,6 +34,10 @@ public class Quiz {
     }
 
     public void addParticipant(String userName, WebSocketSession session) {
+        if(isQuizRunning) {
+            broadcastService.sendMessageToParticipant(session, "Quiz already started! You cannot play this quiz!");
+            throw new IllegalArgumentException(MessageFormat.format("Cannot add {0} to quiz {1}. Quiz already started!", userName, id));
+        }
         String oldUsername = participants.get(session);
         if(Objects.nonNull(oldUsername)) {
             scores.remove(oldUsername);
@@ -39,6 +45,7 @@ public class Quiz {
         participants.put(session, userName);
         scores.putIfAbsent(userName, 0);
         broadcastService.sendMessageToParticipant(session, "You joined quiz: " + id);
+        broadcastService.broadcastToAllParticipants(participants.keySet(), "Current Ranking #\n" + formatRanking());
         if (!active && !hasCountdownStarted && !participants.isEmpty()) {
             startCountdown();
         }
@@ -72,6 +79,7 @@ public class Quiz {
 
     private void startQuiz() {
         active = true;
+        isQuizRunning = true;
         log.info("Starting Quiz: " + this.id);
         broadcastNextQuestion();
     }
@@ -123,19 +131,21 @@ public class Quiz {
         StringBuilder ranking = new StringBuilder();
         scores.entrySet().stream()
                 .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
-                .forEach(entry -> ranking.append(entry.getKey()).append(": ").append(entry.getValue()).append(" points\n"));
+                .forEach(entry -> ranking.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n"));
         return ranking.toString();
     }
 
     public void submitAnswer(WebSocketSession session, String answer) {
         String userName = participants.get(session);
         if (userName == null || currentQuestionIndex >= questions.size()) {
+            broadcastService.sendMessageToParticipant(session, "You are not part of this quiz or the quiz has ended.");
             throw new IllegalArgumentException("You are not part of this quiz or the quiz has ended.");
         }
 
         Question question = questions.get(currentQuestionIndex);
         if (question.isCorrectAnswer(answer)) {
             scores.computeIfPresent(userName, (key, value) -> value + 1);
+            broadcastService.broadcastToAllParticipants(participants.keySet(), "Current Ranking #\n" + formatRanking());
         }
     }
 

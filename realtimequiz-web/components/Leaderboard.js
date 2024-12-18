@@ -5,7 +5,7 @@ export default function Leaderboard({ data }) {
       <ul>
         {data.map((entry, index) => (
           <li key={index}>
-            {entry} 
+            {entry} points
           </li>
         ))}
       </ul>
